@@ -25,33 +25,6 @@
         constructor(text) {
           this.text = text;
           this.isDone = false;
-          this.div = null;
-        }
-
-        createIn(element) {
-          this.div = document.createElement("div");
-          this.div.classList.add("task");
-
-          let input = document.createElement("input");
-          input.addEventListener("click", () => this.changeState(this.div));
-          input.type = "checkbox";
-
-          let p = document.createElement("p");
-          p.innerText = this.text;
-
-          this.div.append(input);
-          this.div.append(p);
-
-          if (this.isDone) {
-            this.div.classList.add("completed");
-            input.checked = true;
-          }
-          element.append(this.div);
-        }
-
-        changeState(element) {
-          this.isDone = !this.isDone;
-          element.classList.toggle("completed");
         }
       }
 
@@ -92,7 +65,7 @@
 
         constructor(element) {
           this.element = element;
-          this.dataService = dataService;
+          dataService = dataService;
         }
 
         #drawList(tasksElements) {
@@ -104,18 +77,18 @@
         }
 
         drawAll() {
-          let tasksElements = [];
+          let taskElements = [];
           let tasks = dataService.allTasks;
           if (tasks.length == 0) return;
 
           tasks.forEach((task) => {
-            taskElement.push(new TaskView(task));
+            taskElements.push(new TaskView(task));
           });
           this.#drawList(taskElements);
         }
 
         drawNotCompleted() {
-          let tasksElements = [];
+          let taskElements = [];
           let tasks = dataService.notCompletedTasks;
           if (tasks.length == 0) return;
 
@@ -145,14 +118,14 @@
 
           let button = document.createElement("button");
           button.innerHTML = "X";
-          button.addEventListener("click", this.element.bind(task));
+          button.addEventListener("click", this.delete.bind(this));
 
-          this.append(input);
-          this.append(p);
-          this.append(button);
+          this.div.append(input);
+          this.div.append(p);
+          this.div.append(button);
 
           if (this.task.isDone) {
-            this.task.classList.add("competed");
+            this.div.classList.add("completed");
             input.checked = true;
           }
           element.append(this.div);
@@ -184,7 +157,7 @@
 
       addTaskButton.addEventListener("click", addTaskHandler);
       showAllButton.addEventListener("click", showAllHandler);
-      showNotCompletedButton.addEventListener("click", showUncompletedHandler);
+      showNotCompletedButton.addEventListener("click", showNotCompletedHandler);
 
       window.addEventListener("load", function () {
         tasksListView.drawAll();
@@ -199,8 +172,8 @@
           if (!startMessage.hidden) startMessage.hidden = true;
 
           let newTask = new Task(taskNameInput.value);
-          newTask.createIn(taskList);
-          tasks.push(newTask);
+          dataService.add(newTask);
+          tasksListView.drawAll();
 
           taskNameInput.value = "";
         } else {
@@ -212,7 +185,7 @@
         tasksListView.drawAll();
       }
 
-      function showUncompletedHandler() {
+      function showNotCompletedHandler() {
         tasksListView.drawNotCompleted();
       }
     </script>
