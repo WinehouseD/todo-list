@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Task 04</title>
+    <title></title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -19,52 +19,8 @@
       <button id="show-uncompleted">Show uncompleted tasks</button>
       <button id="show-all-tasks">Show all</button>
     </div>
+
     <script>
-      let taskNameInput = document.querySelector("#task-name-input");
-      let addTaskButton = document.querySelector("#add-task-btn");
-      let startMessage = document.querySelector("#start-message");
-      let taskList = document.querySelector(".task-list");
-      let uncompletedTasks = document.querySelector("#show-uncompleted");
-      let showAll = document.querySelector("#show-all-tasks");
-      let tasks = [];
-
-      addTaskButton.addEventListener("click", addTaskHandler);
-
-      taskNameInput.addEventListener("keydown", function (e) {
-        if (e.code == "Enter") addTaskHandler();
-      });
-      showAll.addEventListener("click", showAllHandler);
-      uncompletedTasks.addEventListener("click", showUncompletedHandler);
-
-      function addTaskHandler() {
-        if (taskNameInput.value) {
-          if (!startMessage.hidden) startMessage.hidden = true;
-
-          let newTask = new Task(taskNameInput.value);
-          newTask.createIn(taskList);
-          tasks.push(newTask);
-
-          taskNameInput.value = "";
-        } else {
-          alert("add task name");
-        }
-      }
-
-      function showAllHandler() {
-        taskList.innerHTML = "";
-        tasks.forEach((task) => {
-          task.createIn(taskList);
-        });
-      }
-      function showUncompletedHandler() {
-        taskList.innerHTML = "";
-        tasks
-          .filter((task) => task.isDone == false)
-          .forEach((task) => {
-            task.createIn(taskList);
-          });
-      }
-
       class Task {
         constructor(text) {
           this.text = text;
@@ -97,6 +53,167 @@
           this.isDone = !this.isDone;
           element.classList.toggle("completed");
         }
+      }
+
+      let dataService = {
+        tasks: [],
+
+        get allTasks() {
+          return this.tasks;
+        },
+
+        get notCompletedTasks() {
+          return this.tasks.filter((task) => task.isDone == false);
+        },
+
+        add(task) {
+          this.tasks.push(task);
+          this.save();
+        },
+
+        delete(task) {
+          let index = this.tasks.indexOf(task);
+          this.tasks.splice(index, 1);
+          this.save();
+        },
+
+        save() {
+          localStorage.setItem("tasks", JSON.stringify(this.tasks));
+        },
+
+        open() {
+          this.tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+        },
+      };
+
+      class TasksListView {
+        element;
+        dataService;
+
+        constructor(element) {
+          this.element = element;
+          this.dataService = dataService;
+        }
+
+        #drawList(tasksElements) {
+          this.element.innerHTML = "";
+
+          tasksElements.forEach((taskElement) => {
+            taskElement.createIn(this.element);
+          });
+        }
+
+        drawAll() {
+          let tasksElements = [];
+          let tasks = dataService.allTasks;
+          if (tasks.length == 0) return;
+
+          tasks.forEach((task) => {
+            taskElement.push(new TaskView(task));
+          });
+          this.#drawList(taskElements);
+        }
+
+        drawNotCompleted() {
+          let tasksElements = [];
+          let tasks = dataService.notCompletedTasks;
+          if (tasks.length == 0) return;
+
+          tasks.forEach((task) => {
+            taskElements.push(new TaskView(task));
+          });
+          this.#drawList(taskElements);
+        }
+      }
+
+      class TaskView {
+        constructor(task) {
+          this.task = task;
+          this.div = null;
+        }
+
+        createIn(element) {
+          this.div = document.createElement("div");
+          this.div.classList.add("task");
+
+          let input = document.createElement("input");
+          input.addEventListener("click", this.changeState.bind(this));
+          input.type = "checkbox";
+
+          let p = document.createElement("p");
+          p.innerText = this.task.text;
+
+          let button = document.createElement("button");
+          button.innerHTML = "X";
+          button.addEventListener("click", this.element.bind(task));
+
+          this.append(input);
+          this.append(p);
+          this.append(button);
+
+          if (this.task.isDone) {
+            this.task.classList.add("competed");
+            input.checked = true;
+          }
+          element.append(this.div);
+        }
+
+        changeState(element) {
+          this.task.isDone = !this.task.isDone;
+          dataService.save();
+          this.div.classList.toggle("completed");
+        }
+
+        delete() {
+          dataService.delete(this.task);
+          this.div.remove();
+        }
+      }
+
+      let taskNameInput = document.querySelector("#task-name-input");
+      let addTaskButton = document.querySelector("#add-task-btn");
+      let startMessage = document.querySelector("#start-message");
+      let showAllButton = document.querySelector("#show-all-btn");
+      let showNotCompletedButton = document.querySelector(
+        "#show-not-completed-btn"
+      );
+      let taskList = document.querySelector(".task-list");
+
+      dataService.open();
+      let tasksListView = new TasksListView(taskList);
+
+      addTaskButton.addEventListener("click", addTaskHandler);
+      showAllButton.addEventListener("click", showAllHandler);
+      showNotCompletedButton.addEventListener("click", showUncompletedHandler);
+
+      window.addEventListener("load", function () {
+        tasksListView.drawAll();
+      });
+
+      taskNameInput.addEventListener("keydown", function (e) {
+        if (e.code == "Enter") addTaskHandler();
+      });
+
+      function addTaskHandler() {
+        if (taskNameInput.value) {
+          if (!startMessage.hidden) startMessage.hidden = true;
+
+          let newTask = new Task(taskNameInput.value);
+          newTask.createIn(taskList);
+          tasks.push(newTask);
+
+          taskNameInput.value = "";
+        } else {
+          alert("add task name");
+        }
+      }
+
+      function showAllHandler() {
+        tasksListView.drawAll();
+      }
+
+      function showUncompletedHandler() {
+        tasksListView.drawNotCompleted();
       }
     </script>
   </body>
